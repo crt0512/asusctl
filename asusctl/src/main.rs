@@ -368,7 +368,7 @@ fn handle_anime(cmd: &AnimeCommand) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if cmd.clear {
-            let data = vec![255u8; anime_type.data_length()];
+            let data = vec![0u8; anime_type.data_length()];
             let tmp = AnimeDataBuffer::from_vec(anime_type, data)?;
             proxy.write(tmp)?;
         }

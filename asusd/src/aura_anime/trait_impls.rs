@@ -143,15 +143,17 @@ impl AniMeZbus {
 
         if !enabled {
             let anime_type = config.anime_type;
-            let data = vec![255u8; anime_type.data_length()];
+            let data = vec![0u8; anime_type.data_length()];
             if let Ok(tmp) = AnimeDataBuffer::from_vec(anime_type, data).map_err(|err| {
                 warn!("ctrl_anime::set_builtins_enabled {}", err);
             }) {
+                // Must go through the packetised path: a raw write of the whole
+                // buffer is rejected by the device with a USB Pipe error
                 self.0
-                    .write_bytes(tmp.data())
+                    .write_data_buffer(tmp)
                     .await
                     .map_err(|err| {
-                        warn!("ctrl_anime::set_builtins_enabled {}", err);
+                        warn!("ctrl_anime::set_builtins_enabled:clear {}", err);
                     })
                     .ok();
             }
@@ -193,6 +195,8 @@ impl AniMeZbus {
             .ok();
         let mut config = self.0.config.lock().await;
         config.display_enabled = true;
+        // The packet above turns the builtins on in hardware, keep config in sync
+        config.builtin_anims_enabled = true;
         config.builtin_anims = settings;
         config.write();
     }
