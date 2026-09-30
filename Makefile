@@ -190,6 +190,23 @@ vendor:
 translate:
 	find -name \*.slint | xargs slint-tr-extractor -o rog-control-center/translations/en/rog-control-center.po
 
+deb:
+	@set -eu; \
+		cargo deb --version >/dev/null 2>&1 || { echo "cargo-deb is required (install with: cargo install cargo-deb)" >&2; exit 1; }; \
+		for dir in asusd-fakeinstall asusd_user-fakeinstall rog_gui-fakeinstall; do \
+			test ! -e "$$dir" || { echo "refusing to overwrite existing staging directory: $$dir" >&2; exit 1; }; \
+		done; \
+		trap 'rm -rf asusd-fakeinstall asusd_user-fakeinstall rog_gui-fakeinstall' EXIT; \
+		$(MAKE) build X11=1; \
+		mkdir -p asusd-fakeinstall asusd_user-fakeinstall rog_gui-fakeinstall; \
+		$(MAKE) DESTDIR=asusd-fakeinstall install-data-asusd; \
+		$(INSTALL_DATA) "./data/$(BIN_U).service" "asusd_user-fakeinstall/usr/lib/systemd/user/$(BIN_U).service"; \
+		$(MAKE) DESTDIR=rog_gui-fakeinstall install-data-rog_gui; \
+		cargo deb --no-build --output target --manifest-path asusctl/Cargo.toml; \
+		cargo deb --no-build --output target --manifest-path asusd/Cargo.toml; \
+		cargo deb --no-build --output target --manifest-path asusd-user/Cargo.toml; \
+		cargo deb --no-build --output target --manifest-path rog-control-center/Cargo.toml
+
 build:
 ifeq ($(VENDORED),1)
 	cargo vendor
@@ -206,4 +223,4 @@ ifeq ($(STRIP_BINARIES),1)
 endif
 
 
-.PHONY: all clean distclean install uninstall update build bindings
+.PHONY: all clean distclean install uninstall update build bindings deb
