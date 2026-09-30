@@ -104,11 +104,13 @@ Pre-built binary packages are available in several Linux distribution repositori
 
 `asusctl` uses `udev` rules to initialize background services when hardware is detected.
 
-On systems such as Fedora or Ultramarine, enable and start the services manually after installation:
+The `asusd.service` unit is static and is started by a udev rule when the ASUS driver is detected; it is not meant to be enabled with `systemctl enable`. After installation, reload udev rules and trigger device detection:
 
 ```sh
-sudo systemctl enable --now asusd.service
 sudo systemctl enable --now asus-shutdown.service
+sudo udevadm control --reload
+sudo udevadm trigger
+systemctl status asusd.service
 ```
 
 On Debian, service activation may require manual intervention. On Pop!_OS systems, disable the `system76-power` GNOME extension and its associated `systemd` service to prevent power profile conflicts.

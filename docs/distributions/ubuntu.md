@@ -23,10 +23,10 @@ brew install asusctl-linux
 brew install rog-control-center-linux
 ```
 
-The casks install the `asusd` systemd units, udev rules, and D-Bus configuration automatically. Verify the daemon is running:
+The casks install the `asusd` systemd units, udev rules, and D-Bus configuration automatically. `asusd.service` is static and is started by udev when the ASUS driver is detected. Enable the shutdown handler and refresh udev rules:
 
 ```bash
-sudo systemctl enable --now asusd.service asus-shutdown.service
+sudo systemctl enable --now asus-shutdown.service
 systemctl --user daemon-reload
 systemctl --user enable --now asusd-user.service
 sudo udevadm control --reload

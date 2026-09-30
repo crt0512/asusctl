@@ -14,10 +14,10 @@ sudo apt install asusctl rog-control-center
 
 ## After installation
 
-Enable and start the services:
+`asusd.service` is static and is started by udev when the ASUS driver is detected. Enable the shutdown handler and refresh udev rules:
 
 ```bash
-sudo systemctl enable --now asusd.service asus-shutdown.service
+sudo systemctl enable --now asus-shutdown.service
 systemctl --user daemon-reload
 systemctl --user enable --now asusd-user.service
 sudo udevadm control --reload

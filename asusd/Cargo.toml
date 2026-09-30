@@ -58,6 +58,6 @@ assets = [
   ["target/release/asusd", "usr/bin/", "755"],
   ["../asusd-fakeinstall/usr/lib/systemd/system/*", "usr/lib/systemd/system/", "644"],
   ["../asusd-fakeinstall/usr/lib/udev/rules.d/*", "usr/lib/udev/rules.d/", "644"],
-  ["../asusd-fakeinstall/usr/share/asusd/*", "usr/share/share/asusd/", "644"],
+  ["../asusd-fakeinstall/usr/share/asusd/*", "usr/share/asusd/", "644"],
   ["../asusd-fakeinstall/usr/share/dbus-1/system.d/*", "usr/share/dbus-1/system.d/", "644"],
 ]
