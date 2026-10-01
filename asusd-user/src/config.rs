@@ -214,9 +214,11 @@ pub struct ConfigBase {
 
 impl StdConfig for ConfigBase {
     fn new() -> Self {
+        // Off by default so the user daemon doesn't take over the AniMe
+        // matrix or keyboard LEDs from other apps unless explicitly enabled
         Self {
-            active_anime: Some("anime-default".to_owned()),
-            active_aura: Some("aura-default".to_owned()),
+            active_anime: None,
+            active_aura: None,
         }
     }
 
