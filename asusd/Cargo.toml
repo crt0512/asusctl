@@ -13,6 +13,12 @@ edition.workspace = true
 name = "asusd"
 path = "src/daemon.rs"
 
+[features]
+# AniMe animations are driven entirely by an external userspace app; asusd only
+# relays its writes to the display and never plays boot/wake/shutdown/system
+# animations itself (which also stops it blocking startup on the boot animation).
+external-anime = []
+
 [dependencies]
 config-traits = { path = "../config-traits" }
 rog_anime = { path = "../rog-anime", features = ["dbus"] }

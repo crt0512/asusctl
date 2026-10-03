@@ -51,6 +51,10 @@ impl AniMe {
 
     /// Will fail if something is already holding the config lock
     async fn do_init_cache(&mut self) {
+        if cfg!(feature = "external-anime") {
+            debug!("AniMe animations handled externally, not caching them");
+            return;
+        }
         if let Ok(mut config) = self.config.try_lock() {
             if let Err(e) = self.cache.init_from_config(&config, config.anime_type) {
                 error!(
@@ -122,6 +126,9 @@ impl AniMe {
     /// Because this also writes to the usb device, other write tries (display
     /// only) *must* get the mutex lock and set the `thread_exit` atomic.
     async fn run_thread(&self, actions: Vec<ActionData>, mut once: bool) {
+        if cfg!(feature = "external-anime") {
+            return;
+        }
         if actions.is_empty() {
             warn!("AniMe system actions was empty");
             return;

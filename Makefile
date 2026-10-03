@@ -39,6 +39,11 @@ ifeq ($(X11),1)
 	ARGS += --features "rog-control-center/x11"
 endif
 
+EXTERNAL_ANIME ?= 0
+ifeq ($(EXTERNAL_ANIME),1)
+	ARGS += --features "asusd/external-anime"
+endif
+
 # Always use the versions in Cargo.lock by default
 ARGS += --locked
 
@@ -197,7 +202,7 @@ deb:
 			test ! -e "$$dir" || { echo "refusing to overwrite existing staging directory: $$dir" >&2; exit 1; }; \
 		done; \
 		trap 'rm -rf asusd-fakeinstall asusd_user-fakeinstall rog_gui-fakeinstall' EXIT; \
-		$(MAKE) build X11=1; \
+		$(MAKE) build X11=1 EXTERNAL_ANIME=1; \
 		mkdir -p asusd-fakeinstall asusd_user-fakeinstall rog_gui-fakeinstall; \
 		$(MAKE) DESTDIR=asusd-fakeinstall install-data-asusd; \
 		$(INSTALL_DATA) "./data/$(BIN_U).service" "asusd_user-fakeinstall/usr/lib/systemd/user/$(BIN_U).service"; \

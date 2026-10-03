@@ -430,6 +430,35 @@ impl DeviceManager {
         Ok(devices)
     }
 
+    /// AniMe is driven over raw USB, not hidraw, so it's set up separately from
+    /// `init_hid_devices`: on startup, and again on hotplug when the device
+    /// enumerates late (it can take several seconds after boot).
+    async fn init_anime_usb(connection: &Connection) -> Option<AsusDevice> {
+        let dev_type = match DeviceHandle::maybe_anime_usb().await {
+            Ok(dev_type) => dev_type,
+            Err(e) => {
+                info!("Tested device was not AniMe Matrix: {e:?}");
+                return None;
+            }
+        };
+        let DeviceHandle::AniMe(anime) = dev_type.clone() else {
+            return None;
+        };
+        let path = dbus_path_for_anime();
+        AniMeZbus::new(anime)
+            .start_tasks(connection, path.clone())
+            .await
+            .map_err(|e| error!("Failed to start AniMe tasks: {e:?}, not adding this device"))
+            .ok()?;
+        Some(AsusDevice {
+            device: dev_type,
+            dbus_path: path,
+            // Not backed by a shared hidraw fd. Claiming the USB interface detaches
+            // usbhid, which fires a hidraw remove we must not tear this down on.
+            hid_key: None,
+        })
+    }
+
     pub async fn find_all_devices(
         connection: &Connection,
         handles: Arc<Mutex<HashMap<String, Arc<Mutex<HidRaw>>>>>,
@@ -481,26 +510,8 @@ impl DeviceManager {
         }
 
         if do_anime {
-            if let Ok(dev_type) = DeviceHandle::maybe_anime_usb().await {
-                // TODO: this is copy/pasted
-                if let DeviceHandle::AniMe(anime) = dev_type.clone() {
-                    let path = dbus_path_for_anime();
-                    let ctrl = AniMeZbus::new(anime);
-                    if ctrl
-                        .start_tasks(connection, path.clone())
-                        .await
-                        .map_err(|e| error!("Failed to start tasks: {e:?}, not adding this device"))
-                        .is_ok()
-                    {
-                        devices.push(AsusDevice {
-                            device: dev_type,
-                            dbus_path: path,
-                            hid_key: None,
-                        });
-                    }
-                }
-            } else {
-                info!("Tested device was not AniMe Matrix");
+            if let Some(dev) = Self::init_anime_usb(connection).await {
+                devices.push(dev);
             }
         }
 
@@ -727,6 +738,30 @@ impl DeviceManager {
                                     debug!(
                                         "Hotplug add: device {path:?} already registered, skipping"
                                     );
+                                    return Ok(());
+                                }
+                                // AniMe that enumerated after the startup probe. Its hidraw
+                                // node is unusable, so set it up over raw USB instead.
+                                if parent
+                                    .attribute_value("idVendor")
+                                    .is_some_and(|v| v == "0b05")
+                                    && parent
+                                        .attribute_value("idProduct")
+                                        .is_some_and(|p| p == "193b")
+                                {
+                                    let anime_path = dbus_path_for_anime();
+                                    if devices
+                                        .lock()
+                                        .await
+                                        .iter()
+                                        .any(|d| d.dbus_path == anime_path)
+                                    {
+                                        debug!("Hotplug add: AniMe already registered, skipping");
+                                    } else if let Some(dev) = Self::init_anime_usb(&conn_copy).await
+                                    {
+                                        info!("Hotplug add: AniMe Matrix registered");
+                                        devices.lock().await.push(dev);
+                                    }
                                     return Ok(());
                                 }
                                 let evdev = event.device();
