@@ -509,10 +509,8 @@ impl DeviceManager {
             }
         }
 
-        if do_anime {
-            if let Some(dev) = Self::init_anime_usb(connection).await {
-                devices.push(dev);
-            }
+        if do_anime && let Some(dev) = Self::init_anime_usb(connection).await {
+            devices.push(dev);
         }
 
         if do_kb_backlight {
